@@ -1,0 +1,31 @@
+import discord
+from discord.ext import commands
+
+class AppealPopup(discord.ui.Modal, title = "Appeal"):
+    issue = discord.ui.TextInput(label = "Appeal", style = discord.TextStyle.long, placeholder = "Explain what happened:", required = True)
+
+class AppealView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        @discord.ui.button(label="Appeal", style=discord.ButtonStyle.green)
+        async def ticket_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(AppealPopup())
+        
+class Appeal(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_member_ban(self, guild, user):
+        embed = discord.Embed(
+            title=f"You have been banned from {guild.name}",
+            description="If you believe this was a mistake, appeal at: form",
+            color=discord.Colour.red()
+        )
+        try:
+            await user.send(embed=embed, view = AppealView)
+        except:
+            pass
+
+async def setup(bot):
+    await bot.add_cog(Appeal(bot))

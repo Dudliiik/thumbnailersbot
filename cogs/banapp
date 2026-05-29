@@ -1,0 +1,67 @@
+import discord
+from discord.ext import commands
+import datetime
+
+appeal_channel = 1475994951119798453
+
+class AppealPopup(discord.ui.Modal, title="Appeal"):
+    issue = discord.ui.TextInput(
+        label="Appeal",
+        style=discord.TextStyle.long,
+        placeholder="Explain what happened:",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        channel = interaction.client.get_channel(appeal_channel)
+
+        embed = discord.Embed(
+            description=f"⚡ **User:** {interaction.user} ({interaction.user.id})\n\n**Appeal:**\n{self.issue.value}",
+            color=discord.Color.green()
+        )
+        embed.set_author(
+        name=f"**{interaction.user} has appeal his ban!**", icon_url = interaction.user.display_avatar.url)
+        
+        embed.timestamp = datetime.datetime.utcnow()
+        
+        embed.set_footer(
+    text=f"{interaction.client.user.name}",
+    icon_url=interaction.client.user.display_avatar.url
+)
+        embed.set_thumbnail(url=interaction.user.display_avatar.url)
+
+        if channel:
+            await channel.send(embed=embed)
+
+        await interaction.response.send_message(
+            "Your appeal has been submitted.",
+            ephemeral=True
+        )
+
+class AppealView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Appeal", style=discord.ButtonStyle.green)
+    async def appeal_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(AppealPopup())
+
+class Appeal(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_member_ban(self, guild, user):
+        embed = discord.Embed(
+            title=f"You have been banned from {guild.name}",
+            description="If you believe this was a mistake, you can appeal below.",
+            color=discord.Colour.red()
+        )
+
+        try:
+            await user.send(embed=embed, view=AppealView())
+        except discord.Forbidden:
+            pass
+
+async def setup(bot):
+    await bot.add_cog(Appeal(bot))
